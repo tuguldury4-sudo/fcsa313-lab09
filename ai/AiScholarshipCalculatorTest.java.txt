@@ -1,0 +1,162 @@
+package mn.edu.must.sqat;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
+
+class AiScholarshipCalculatorTest {
+
+    private static final double EPS = 1e-9;
+
+    private final ScholarshipCalculator calc = new ScholarshipCalculator();
+
+    // ---------- letterGrade ----------
+
+    @Test
+    void letterGrade_negativeScore_throws() {
+        assertThrows(IllegalArgumentException.class, () -> calc.letterGrade(-1));
+    }
+
+    @Test
+    void letterGrade_above100_throws() {
+        assertThrows(IllegalArgumentException.class, () -> calc.letterGrade(100.5));
+    }
+
+    @Test
+    void letterGrade_boundaries0And100_valid() {
+        assertEquals("F", calc.letterGrade(0));
+        assertEquals("A", calc.letterGrade(100));
+    }
+
+    @Test
+    void letterGrade_score90_returnsA() {
+        assertEquals("A", calc.letterGrade(90));
+    }
+
+    @Test
+    void letterGrade_score89point99_returnsB() {
+        assertEquals("B", calc.letterGrade(89.99));
+    }
+
+    @Test
+    void letterGrade_score80_returnsB() {
+        assertEquals("B", calc.letterGrade(80));
+    }
+
+    @Test
+    void letterGrade_score75_returnsC() {
+        assertEquals("C", calc.letterGrade(75));
+    }
+
+    @Test
+    void letterGrade_score70_returnsC() {
+        assertEquals("C", calc.letterGrade(70));
+    }
+
+    @Test
+    void letterGrade_score65_returnsD() {
+        assertEquals("D", calc.letterGrade(65));
+    }
+
+    // Per specification 60 -> "D" (implementation uses > 60, so this exposes a defect)
+    @Test
+    void letterGrade_score60_returnsD() {
+        assertEquals("D", calc.letterGrade(60));
+    }
+
+    @Test
+    void letterGrade_score59point99_returnsF() {
+        assertEquals("F", calc.letterGrade(59.99));
+    }
+
+    // ---------- gpa ----------
+
+    @Test
+    void gpa_null_throws() {
+        assertThrows(IllegalArgumentException.class, () -> calc.gpa(null));
+    }
+
+    @Test
+    void gpa_emptyArray_throws() {
+        assertThrows(IllegalArgumentException.class, () -> calc.gpa(new double[] {}));
+    }
+
+    @Test
+    void gpa_allGradeLetters_averagesCorrectly() {
+        // A=4, B=3, C=2, D=1, F=0 -> 10 / 5 = 2.0
+        assertEquals(2.0, calc.gpa(new double[] {95, 85, 75, 65, 30}), EPS);
+    }
+
+    @Test
+    void gpa_singleF_returnsZero() {
+        assertEquals(0.0, calc.gpa(new double[] {10}), EPS);
+    }
+
+    @Test
+    void gpa_invalidScoreInside_throws() {
+        assertThrows(IllegalArgumentException.class, () -> calc.gpa(new double[] {90, 101}));
+    }
+
+    // ---------- scholarship ----------
+
+    @Test
+    void scholarship_negativeGpa_throws() {
+        assertThrows(IllegalArgumentException.class, () -> calc.scholarship(-0.1, 10, false));
+    }
+
+    @Test
+    void scholarship_gpaAbove4_throws() {
+        assertThrows(IllegalArgumentException.class, () -> calc.scholarship(4.1, 10, false));
+    }
+
+    @Test
+    void scholarship_negativeCredits_throws() {
+        assertThrows(IllegalArgumentException.class, () -> calc.scholarship(3.0, -1, false));
+    }
+
+    @Test
+    void scholarship_violation_returnsZero() {
+        assertEquals(0, calc.scholarship(4.0, 20, true));
+    }
+
+    @Test
+    void scholarship_highGpaButFewCredits_fallsTo70() {
+        assertEquals(70, calc.scholarship(3.9, 14, false));
+    }
+
+    @Test
+    void scholarship_highGpaAndLowCredits_fallsTo50() {
+        assertEquals(50, calc.scholarship(3.9, 5, false));
+    }
+
+    @Test
+    void scholarship_gpa38Credits15_returns100() {
+        assertEquals(100, calc.scholarship(3.8, 15, false));
+    }
+
+    @Test
+    void scholarship_gpa34Credits11_returns50() {
+        assertEquals(50, calc.scholarship(3.4, 11, false));
+    }
+
+    @Test
+    void scholarship_gpa3Exactly_returns50() {
+        assertEquals(50, calc.scholarship(3.0, 0, false));
+    }
+
+    @Test
+    void scholarship_gpaBelow3_returnsZero() {
+        assertEquals(0, calc.scholarship(2.99, 20, false));
+    }
+
+    @Test
+    void scholarship_boundaryGpa0AndCredits0_returnsZero() {
+        assertEquals(0, calc.scholarship(0, 0, false));
+    }
+
+    @Test
+    void scholarship_gpa4_credits0_returns50() {
+        assertEquals(50, calc.scholarship(4.0, 0, false));
+    }
+}
